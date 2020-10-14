@@ -19,15 +19,18 @@ public class AdminController {
     private UserService userService;
 
     @GetMapping(value = "")
-    public String mainPage(ModelMap model){
+    public ModelAndView Test(){
+        User user = userService.getById(1);
         List<User> users = userService.getAll();
-        model.addAttribute("users", users);
-        return "user_list";
+        ModelAndView modelAndView = new ModelAndView("main");
+        modelAndView.addObject("user", user);
+        modelAndView.addObject("users", users);
+        return modelAndView;
     }
 
     @GetMapping(value = "/add")
     public ModelAndView addGet(){
-        ModelAndView modelAndView = new ModelAndView("user_form");
+        ModelAndView modelAndView = new ModelAndView("main");
         User user = new User();
         modelAndView.addObject("user", user);
         modelAndView.addObject("submit_url", "/admin/add");
@@ -36,8 +39,8 @@ public class AdminController {
     }
 
     @GetMapping(value = "/update")
-    public ModelAndView updateGet(@ModelAttribute("id") long id){
-        ModelAndView modelAndView = new ModelAndView("user_form");
+    public ModelAndView updateGet(@ModelAttribute("id") Long id){
+        ModelAndView modelAndView = new ModelAndView("main");
         User user = userService.getById(id);
         modelAndView.addObject("user", user);
         modelAndView.addObject("submit_url", "/admin/update");
@@ -47,40 +50,34 @@ public class AdminController {
 
     @PostMapping(value = "/add")
     public ModelAndView addPost(@ModelAttribute("obj") @Validated User user, BindingResult result){
-        if (result.hasErrors()) {
-            ModelAndView modelAndView = new ModelAndView("user_form");
-            modelAndView.addObject("user", user);
-            return modelAndView;
-        }
-        else {
-            user.setRole("USER");
-            userService.add(user);
-            return new ModelAndView("redirect:/admin");
-        }
+        userService.add(user);
+        return new ModelAndView("redirect:/admin/");
     }
 
     @PostMapping(value = "/update")
     public ModelAndView updatePost(@ModelAttribute("obj") @Validated User user, BindingResult result){
-        if (result.hasErrors()) {
-            ModelAndView modelAndView = new ModelAndView("user_form");
-            modelAndView.addObject("user", user);
-            return modelAndView;
-        }
-        else {
-            userService.update(user);
-            return new ModelAndView("redirect:/admin");
-        }
+        User old_user = (User) userService.loadUserByUsername(user.getUsername());
+        user.setId(old_user.getId());
+        userService.update(user);
+        return new ModelAndView("redirect:/admin/");
     }
 
     @GetMapping(value = "/delete")
-    public ModelAndView deleteGet(@ModelAttribute("id") long id){
+    public ModelAndView deleteGet(@ModelAttribute("id") Long id){
         User user = userService.getById(id);
         userService.delete(user);
-        return new ModelAndView("redirect:/admin");
+        return new ModelAndView("redirect:/admin/");
+    }
+
+    @PostMapping(value = "/delete")
+    public ModelAndView deletePost(@ModelAttribute("obj") @Validated User user, BindingResult result){
+        User user1 = (User) userService.loadUserByUsername(user.getUsername());
+        userService.delete(user1);
+        return new ModelAndView("redirect:/admin/");
     }
 
     @GetMapping("/form")
     public String userForm(ModelMap model){
-        return "user_form";
+        return "main";
     }
 }
